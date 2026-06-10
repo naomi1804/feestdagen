@@ -1,1 +1,107 @@
+<!DOCTYPE html>
+<html lang="nl">
 
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Feestdagen</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .feestdag {
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .feestdag:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2>Komende feestdagen 🇳🇱</h2>
+        <div id="feestdagen">
+            Laden...
+        </div>
+    </div>
+
+    <script>
+        const today = new Date();
+        const year = today.getFullYear();
+
+        fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/NL`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+
+                // Filter toekomstige feestdagen
+                const upcomingHolidays = data.filter(holiday => {
+                    return new Date(holiday.date) >= today;
+                });
+
+                // Sorteer op datum
+                upcomingHolidays.sort((a, b) =>
+                    new Date(a.date) - new Date(b.date)
+                );
+
+                const container = document.getElementById("feestdagen");
+
+                // Check of er nog feestdagen zijn
+                if (upcomingHolidays.length === 0) {
+                    container.innerHTML = "Geen feestdagen meer dit jaar.";
+                    return;
+                }
+
+                const nextThree = upcomingHolidays.slice(0, 3);
+
+                container.innerHTML = "";
+
+                nextThree.forEach(h => {
+                    const datum = new Date(h.date).toLocaleDateString("nl-NL", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric"
+                    });
+
+                    container.innerHTML += `
+                        <div class="feestdag">
+                            <strong>${h.localName}</strong><br>
+                            <small>${datum}</small>
+                        </div>
+                    `;
+                });
+            })
+            .catch(error => {
+                document.getElementById("feestdagen").innerHTML =
+                    "Kon feestdagen niet laden.";
+                console.error("Fout bij ophalen:", error);
+            });
+    </script>
+
+</body>
+
+</html>
